@@ -1,0 +1,90 @@
+---
+title: "EDA_For_RNN_NLP"
+author: "Ethan Tucker"
+date: '2022-08-10'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Upload Data
+
+```{r cars}
+NLP_data <- read_csv("C:/Users/first/Desktop/DTSA_5511_HW/Week4/nlp-getting-started/train.csv")
+```
+
+## Make plots of probability distributions for average label against count(keyword), count(location), n() >= 30
+
+We require that n() >= 30 so that the binomial response has sufficient opportunity to converge to the Gaussian in accordance with the central limit theorem.
+
+```{r pressure, echo=FALSE}
+#Plot using keyword
+
+keyword_counts <- NLP_data %>%
+                    group_by(keyword) %>%
+                      summarise("keyword_count" = n())
+
+
+NLP_data %>%
+  inner_join(keyword_counts, by = "keyword") %>%
+    group_by(keyword, target) %>%
+      summarise("prop" = n()/keyword_count, keyword_count) %>% 
+        ggplot(aes(x = prop, fill = factor(target))) +
+        geom_histogram(alpha = 0.5) +
+        labs(x = "Proportion of all keyword mentions",
+             y = "Count",
+             title = "Histogram of Proportion of All Keyword Mentions by Target")
+
+#Plot using location
+location_counts <- NLP_data %>%
+                    group_by(location) %>%
+                      summarise("location_count" = n())
+
+
+NLP_data %>%
+  inner_join(location_counts, by = "location") %>%
+    group_by(location, target) %>%
+      summarise("prop" = n()/location_count, location_count) %>% 
+        ggplot(aes(x = prop, fill = factor(target))) +
+        geom_histogram(alpha = 0.5) +
+        labs(x = "Proportion of all location observations",
+             y = "Count",
+             title = "Histogram of Proportion of All Location Observations by Target")
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r}
+NLP_data %>%
+  group_by(location) %>%
+    summarise("num_loc_mentions" = n()) %>%
+      filter(num_loc_mentions < 1000) %>%
+        group_by(num_loc_mentions)  %>%
+          summarise("prop" = sum(num_loc_mentions)/length(NLP_data$id)) %>%
+            ggplot(aes(y = num_loc_mentions, x = prop)) +
+            geom_violin() +
+            coord_flip() +
+            labs(y = "Number of location mentions",
+                 x = "Proportion of all tweets",
+                 title = "Marginal PDF of Number of Location Mentions")
+
+NLP_data %>%
+  group_by(keyword) %>%
+    summarise("num_key_mentions" = n()) %>%
+        group_by(num_key_mentions)  %>%
+          summarise("prop" = sum(num_key_mentions)/length(NLP_data$id)) %>%
+            ggplot(aes(y = num_key_mentions, x = prop)) +
+            geom_violin() +
+            coord_flip() +
+            labs(y = "Number of keyword mentions",
+                 x = "Proportion of all tweets",
+                 title = "Marginal PDF of Number of Keyword Mentions")
+```
+
+
+
